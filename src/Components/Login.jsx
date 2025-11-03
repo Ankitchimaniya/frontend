@@ -42,6 +42,7 @@ export default function Login() {
             localStorage.setItem("token", data.token);
             // store username to show in UI if needed
             localStorage.setItem("username", formData.username);
+            localStorage.setItem("userId", data.userId);
             // navigate without full reload so components can react
             navigate('/');
         } catch (err) {

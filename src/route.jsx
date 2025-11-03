@@ -1,7 +1,7 @@
 import Login from "./Components/Login";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import RootLayout from "./Components/root";
-import Signup from "./Components/Signup";
+import Signup from "./Components/Signup"; 
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {

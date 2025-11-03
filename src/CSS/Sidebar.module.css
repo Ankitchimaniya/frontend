@@ -19,6 +19,17 @@
 .sidebarContent {
     position: absolute;
     top: 0;
+    right: -320px;
+    width: 320px;
+    height: 100%;
+    background: white;
+    padding: 20px;
+    transition: right 0.3s ease-in-out;
+}
+
+.sidebarContentLeft {
+    position: absolute;
+    top: 0;
     left: -320px;
     width: 320px;
     height: 100%;
@@ -28,6 +39,10 @@
 }
 
 .sidebar.active .sidebarContent {
+    right: 0;
+}
+
+.sidebar.active .sidebarContentLeft {
     left: 0;
 }
 

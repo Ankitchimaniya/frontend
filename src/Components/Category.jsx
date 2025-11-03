@@ -1,5 +1,6 @@
 import { FaArrowRight, FaArrowLeft } from "react-icons/fa";
 import React from "react";
+import { Link } from "react-router-dom";
 
 function getImageUrl(imagePath) {
     return "https://localhost:7172/api/Images/File/" + imagePath;
@@ -23,7 +24,7 @@ export default function Category() {
                if (e.key === 'token') fetchCategories();
            };
            window.addEventListener('storage', onStorage);
-           return () => window.removeEventListener('storage', onStorage);
+           return () => window.removeEventListener('storage', onStorage); //clean up function 
        }, []);
 
         const nextSlide = () => {
@@ -57,9 +58,9 @@ export default function Category() {
                 {categories.map((category, index) => {
                     return(
 
-                    <div  style={ {transform:`translateX(-${slide*100}%)`}}
+                    <div style={ {transform:`translateX(-${slide*100}%)`}}
                     key={index} className="w-[150px] shrink-0 duration-500">
-                        <img src={getImageUrl(category.imageUrl)} alt=""/>
+                        <Link to=""><img src={getImageUrl(category.imageUrl)} alt=""/></Link>
                     </div>
                 )})}
             </div>
@@ -68,4 +69,3 @@ export default function Category() {
         </div>
     );
 }
-
