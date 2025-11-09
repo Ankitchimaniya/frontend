@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
-import styles from '../CSS/Login.module.css';
 import { Link, useNavigate } from 'react-router-dom';
+import { FaEye, FaEyeSlash, FaFacebookF, FaTwitter, FaGoogle } from 'react-icons/fa';
+import axios from 'axios';
+import useAlert from '../hooks/useAlert';
+import AlertContainer from './AlertContainer';
 
 export default function Login() {
+    const { alerts, showError, showSuccess, removeAlert } = useAlert();
     const [formData, setFormData] = useState({
         username: '',
         password: '',
     });
+    const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -16,82 +23,166 @@ export default function Login() {
         }));
     };
 
-
-    const [error, setError] = useState("");
-
-    const navigate = useNavigate();
-
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError("");
+        setLoading(true);
+        
         try {
-            const response = await fetch("https://localhost:7172/api/Authenticate/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    username: formData.username, // adjust if backend expects 'email' or 'username'
+            const response = await axios.post("https://localhost:7172/api/Authenticate/login",
+                JSON.stringify({
+                    username: formData.username, 
                     password: formData.password
-                })
-            });
-            if (!response.ok) {
-                throw new Error("Invalid credentials");
-            }
-            const data = await response.json();
-            localStorage.setItem("token", data.token);
-            // store username to show in UI if needed
+                }),
+                { headers: { 'Content-Type': 'application/json' }
+                });
+            localStorage.setItem("token", response.data.token);
             localStorage.setItem("username", formData.username);
-            localStorage.setItem("userId", data.userId);
-            // navigate without full reload so components can react
-            navigate('/');
+            localStorage.setItem("userId", response.data.userId);
+            showSuccess('Login successful! Welcome back!');
+            setTimeout(() => navigate('/'), 1500);
         } catch (err) {
-            setError(err.message || "Login failed");
+            let errorMessage = "Login failed. Please try again.";
+            
+            if(!err.response) {
+                errorMessage = "No Server Response. Please check your connection.";
+            }
+            else if(err.response.status === 400) {
+                errorMessage = "Missing Username or Password";
+            }
+            else if(err.response.status === 401) {
+                errorMessage = "Invalid credentials. Please check your username and password.";
+            }
+            else {
+                errorMessage = "Login Failed. Please try again.";
+            }
+            
+            showError(errorMessage);
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className={styles.loginContainer}>
-            <div className={styles.loginBox}>
-                <h2 className={styles.title}>Login</h2>
-                <form onSubmit={handleSubmit}>
-                    <div className={styles.formGroup}>
-                        <label>Username</label>
-                        <input type="text" name="username" placeholder="Type your username" value={formData.username} onChange={handleChange} required />
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center p-4">
+            {/* Alert Container */}
+            <AlertContainer alerts={alerts} removeAlert={removeAlert} />
+            
+            <div className="w-full max-w-md">
+                {/* Login Card */}
+                <div className="card p-8 shadow-hard animate-fade-in">
+                    {/* Header */}
+                    <div className="text-center mb-8">
+                        <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
+                        <p className="text-gray-600">Sign in to your account</p>
                     </div>
-                    <div className={styles.formGroup}>
-                        <label>Password</label>
-                        <input type="password" name="password" placeholder="Type your password" value={formData.password} onChange={handleChange} required />
+
+                    {/* Login Form */}
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Username Field */}
+                        <div className="form-group">
+                            <label className="form-label" htmlFor="username">
+                                Username
+                            </label>
+                            <input
+                                type="text"
+                                id="username"
+                                name="username"
+                                placeholder="Enter your username"
+                                value={formData.username}
+                                onChange={handleChange}
+                                required
+                                className="input"
+                            />
+                        </div>
+
+                        {/* Password Field */}
+                        <div className="form-group">
+                            <label className="form-label" htmlFor="password">
+                                Password
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    id="password"
+                                    name="password"
+                                    placeholder="Enter your password"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    required
+                                    className="input pr-12"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                                >
+                                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Forgot Password */}
+                        <div className="flex justify-end">
+                            <Link 
+                                to="/forgot-password" 
+                                className="text-sm text-primary-600 hover:text-primary-700 hover:underline transition-colors"
+                            >
+                                Forgot password?
+                            </Link>
+                        </div>
+
+                        {/* Login Button */}
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="btn btn-primary w-full btn-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? (
+                                <div className="flex items-center justify-center space-x-2">
+                                    <div className="loading-spinner w-4 h-4"></div>
+                                    <span>Signing in...</span>
+                                </div>
+                            ) : (
+                                'LOGIN'
+                            )}
+                        </button>
+                    </form>
+
+                    {/* Divider */}
+                    <div className="relative my-8">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="bg-white px-4 text-gray-500">Or continue with</span>
+                        </div>
                     </div>
-                    <div className={styles.forgotPassword}>
-                        <Link to="/forgot-password">Forgot password?</Link>
+
+                    {/* Social Login */}
+                    <div className="flex justify-center space-x-4 mb-6">
+                        <button className="p-3 border border-gray-300 rounded-full hover:border-blue-500 hover:bg-blue-50 transition-colors group">
+                            <FaFacebookF className="w-5 h-5 text-gray-600 group-hover:text-blue-600" />
+                        </button>
+                        <button className="p-3 border border-gray-300 rounded-full hover:border-sky-500 hover:bg-sky-50 transition-colors group">
+                            <FaTwitter className="w-5 h-5 text-gray-600 group-hover:text-sky-500" />
+                        </button>
+                        <button className="p-3 border border-gray-300 rounded-full hover:border-red-500 hover:bg-red-50 transition-colors group">
+                            <FaGoogle className="w-5 h-5 text-gray-600 group-hover:text-red-500" />
+                        </button>
                     </div>
-                    {error && <div style={{ color: 'red', marginBottom: '10px', textAlign: 'center' }}>{error}</div>}
-                    <button type="submit" className={styles.loginButton}>
-                        LOGIN
-                    </button>
-                </form>
-                
-                <div className={styles.divider}>Or Sign Up Using</div>
-                
-                <div className={styles.socialLogin}>
-                    <div className={styles.socialButton}>
-                        <img src="/images/facebook.png" alt="Facebook" width="45" height="45" />
+
+                    {/* Sign Up Link */}
+                    <div className="text-center">
+                        <p className="text-gray-600">
+                            Don't have an account?{' '}
+                            <Link 
+                                to="/signup" 
+                                className="font-semibold text-primary-600 hover:text-primary-700 hover:underline transition-colors"
+                            >
+                                Sign Up
+                            </Link>
+                        </p>
                     </div>
-                    <div className={styles.socialButton}>
-                        <img src="/images/twitter.png" alt="Twitter" width="30" height="30" />
-                    </div>
-                    <div className={styles.socialButton}>
-                        <img src="/images/google.png" alt="Google" width="50" height="50" />
-                    </div>
-                </div>
-                
-                <div className={styles.signupText}>
-                    Or Sign Up Using
-                </div>
-                
-                <div className={styles.signupText}>
-                    <Link to="/signup" className={styles.signupLink}>SIGN UP</Link>
                 </div>
             </div>
         </div>

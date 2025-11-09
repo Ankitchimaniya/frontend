@@ -1,225 +1,143 @@
-import { RxCaretDown } from "react-icons/rx";
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { GoSearch } from "react-icons/go";
 import { BiSolidOffer } from "react-icons/bi";
 import { IoMdHelp } from "react-icons/io";
 import { TiShoppingCart } from "react-icons/ti";
-import { FiLogIn, FiLogOut } from "react-icons/fi";
 import { FaUser } from "react-icons/fa";
-import { MdLocationOn, MdClose } from "react-icons/md";
-import { NavLink } from "react-router-dom";
-import styles from '../CSS/Sidebar.module.css';
+import { IoIosAdd } from "react-icons/io";
+import { Sidebar } from "./Sidebars";
+import useAlert from "../hooks/useAlert";
+import useHeaderService from "../hooks/useHeaderService";
+import AlertContainer from "./AlertContainer";
 
+// Component imports
+import Logo from "./Header/Logo";
+import LocationSelector from "./Header/LocationSelector";
+import Navigation from "./Header/Navigation";
 
 export default function Header() {
-    const [isAuth, setIsAuth] = useState(false);
+    const { alerts, showWarning, removeAlert } = useAlert();
+    const {
+        isAuth,
+        locations,
+        user,
+        profileError,
+        profileLoading,
+        cartItemCount,
+        allCartItems,
+        addToCart,
+        removeFromCart,
+        removeItemCompletely,
+        handleLocationChange,
+        fetchUserProfile,
+        handleCartClick,
+        handleLogout,
+        setLocation
+    } = useHeaderService(showWarning);
+
     const [isSidebarOpen, setSidebarOpen] = useState(false);
-    const [sidebarView, setSidebarView] = useState('location'); // 'location' | 'profile'
-    const [locations, setLocation] = useState([]);
-    const [user, setUser] = useState(null);
-    const [profileError, setProfileError] = useState("");
-    const [profileLoading, setProfileLoading] = useState(false);
-
-    const fetchLocation = async () => {
-        const token = localStorage.getItem('token');
-        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-        const response = await fetch('https://localhost:7172/api/locations', { headers });
-        const data = await response.json();
-        setLocation(data);
-    };
-
-    useEffect(() => {
-        fetchLocation();
-        const onStorage = (e) => {
-            if (e.key === 'token') fetchLocation();
-        };
-        window.addEventListener('storage', onStorage);
-        return () => window.removeEventListener('storage', onStorage);
-    }, []);
-
-    const handleLocationChange = (newLocation) => {
-        locations.forEach(location => {       
-            location.name === newLocation ? location.isSelected = true : location.isSelected = false;
-        });
-        const selectedLocation = locations.find(loc => loc.name === newLocation);
-        localStorage.setItem('location', selectedLocation.name);
-        localStorage.setItem('address', selectedLocation.address);
-        setLocation([...locations]);
-
-        // Close the sidebar after selecting a location
-        setSidebarOpen(false);
-    };
+    const [sidebarView, setSidebarView] = useState('location');
 
     const openLocationSidebar = () => {
         setSidebarView('location');
         setSidebarOpen(true);
     };
 
-    const fetchUserProfile = async () => {
-        setProfileLoading(true);
-        setProfileError("");
-        try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('User not logged in');
-            }
-            const res = await fetch('https://localhost:7172/api/authenticate/profile', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (!res.ok) throw new Error('Failed to fetch profile');
-            const data = await res.json();
-            setUser(data);
-        } catch (err) {
-            setUser(null);
-            setProfileError(err.message || 'Failed to load profile');
-        } finally {
-            setProfileLoading(false);
-        }
-    };
-
     const openProfileSidebar = (e) => {
         if (e && e.preventDefault) e.preventDefault();
         setSidebarView('profile');
         setSidebarOpen(true);
-        // Fetch profile details when opening the sidebar
         fetchUserProfile();
+    };
+
+    const openCartSidebar = () => {
+        if (handleCartClick()) {
+            setSidebarView('cart');
+            setSidebarOpen(true);
+        }
+    };
+
+    const toggleSidebar = () => {
+        setSidebarOpen(!isSidebarOpen);
+    };
+
+    const onLocationChange = (newLocation) => {
+        handleLocationChange(newLocation, setLocation);
+        setSidebarOpen(false);
     };
 
     const links = [
         { icon: <GoSearch />, name: "Search" },
         { icon: <BiSolidOffer />, name: "Offers", sup: 'new' },
         { icon: <IoMdHelp />, name: "Help" },
-        { icon: <TiShoppingCart />, name: "Cart", sup: 0 },
+        { icon: <TiShoppingCart />, name: "Cart", sup: cartItemCount > 0 ? cartItemCount : null, onClick: openCartSidebar },
         { icon: <FaUser />, name: "Profile", onClick: openProfileSidebar },
-        // login/logout will be conditionally rendered below
+        { icon: <IoIosAdd />, name: "Restaurant Mode", to: '/restaurant' },
     ];
-
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        setIsAuth(!!token);
-
-        // attach storage event to update UI if other tabs change auth
-        const onStorage = (e) => {
-            if (e.key === 'token') setIsAuth(!!e.newValue);
-        };
-        window.addEventListener('storage', onStorage);
-        return () => window.removeEventListener('storage', onStorage);
-    }, []);
-
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('username');
-        setIsAuth(false);
-        // simple redirect to home
-        window.location.href = '/login';
-    };
-    const toggleSidebar = () => {
-        setSidebarOpen(!isSidebarOpen);
-    };
 
     return (
         <>
-            {/* Sidebar (Location/Profile) */}
-            <div className={`${styles.sidebar} ${isSidebarOpen ? styles.active : ''}`} onClick={toggleSidebar}>
-                <div className={`${sidebarView === 'location' ? styles.sidebarContentLeft : styles.sidebarContent}`} onClick={e => e.stopPropagation()}>
-                    <div className={styles.sidebarHeader}>
-                        <h2 className={styles.sidebarTitle}>
-                            {sidebarView === 'location' ? 'Select Location' : 'Your Profile'}
-                        </h2>
-                        <button className={styles.closeButton} onClick={toggleSidebar}>
-                            <MdClose />
-                        </button>
-                    </div>
+            {/* Alert Container */}
+            <AlertContainer alerts={alerts} removeAlert={removeAlert} />
 
-                    {sidebarView === 'location' ? (
-                        <ul className={styles.locationList}>
-                            {locations.map((location, index) => (
-                                <li
-                                    key={index}
-                                    className={styles.locationItem}
-                                    onClick={() => handleLocationChange(location.name)}
-                                >
-                                    <MdLocationOn className={styles.locationIcon} />
-                                    <div className={styles.locationInfo}>
-                                        <div className={styles.locationName}>{location.name}</div>
-                                        <div className={styles.locationAddress}>{location.address}</div>
-                                    </div>
-                                    {location.isSelected && (
-                                        <span className="text-orange-500">✓</span>
-                                    )}
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <div>
-                            {profileLoading && <p>Loading profile...</p>}
-                            {!profileLoading && profileError && (
-                                <p style={{ color: 'red', marginBottom: 12 }}>{profileError}. <a href="/login" className="text-blue-600 underline">Login</a></p>
-                            )}
-                            {!profileLoading && !profileError && user && (
-                                <div className={styles.locationList}>
-                                    <div className={styles.locationItem} style={{ cursor: 'default' }}>
-                                        <FaUser />
-                                        <div className={styles.locationInfo}>
-                                            <div className={styles.locationName}>Username</div>
-                                            <div className={styles.locationAddress}>{user.username || user.email}</div>
-                                        </div>
-                                    </div>
-                                    <div className={styles.locationItem} style={{ cursor: 'default' }}>
-                                        <MdLocationOn className={styles.locationIcon} />
-                                        <div className={styles.locationInfo}>
-                                            <div className={styles.locationName}>Email</div>
-                                            <div className={styles.locationAddress}>{user.email}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-            </div>
+            {/* Sidebar */}
+            <Sidebar 
+                isSidebarOpen={isSidebarOpen}
+                sidebarView={sidebarView}
+                toggleSidebar={toggleSidebar}
+                // Location props
+                locations={locations}
+                handleLocationChange={onLocationChange}
+                // Profile props
+                user={user}
+                profileLoading={profileLoading}
+                profileError={profileError}
+                // Cart props
+                allCartItems={allCartItems}
+                cartItemCount={cartItemCount}
+                addToCart={addToCart}
+                removeFromCart={removeFromCart}
+                removeItemCompletely={removeItemCompletely}
+                // Mobile menu props
+                links={links}
+                isAuth={isAuth}
+                handleLogout={handleLogout}
+                openLocationSidebar={openLocationSidebar}
+            />
 
             {/* Header */}
-            <header className="p-[15px] shadow-xl">
-                <div className="max-w-[1200px] mx-auto flex items-center">
-                    <div className="w-[50px] border">
-                        <img src="images/logo.png" className="w-full" alt="" />
-                    </div>
-                    <div>
-                        <span className="font-bold border-b-[3px] border-black">{localStorage.getItem('location')}</span>
-                        {localStorage.getItem('address')} <RxCaretDown className="inline text-[orange] cursor-pointer" onClick={openLocationSidebar} />
+            <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between h-16">
+                        {/* Logo */}
+                        <div className="flex items-center space-x-4">
+                            <Logo />
+                            
+                            {/* Desktop Location Selector */}
+                            <div className="hidden sm:block">
+                                <LocationSelector 
+                                    onLocationClick={openLocationSidebar} 
+                                    isDesktop={true} 
+                                />
+                            </div>
+                        </div>
 
+                        {/* Navigation */}
+                        <Navigation 
+                            links={links}
+                            isAuth={isAuth}
+                            onLogout={handleLogout}
+                        />
+ 
                     </div>
-                    <nav className="ml-auto list-none flex gap-6 text-gray-600 font-semibold">
-                        {links.map((link, index) => (
-                            <li key={index} className="flex items-center gap-1 hover:text-black cursor-pointer">
-                                {link.icon}
-                                <sup>{link.sup}</sup>
-                                {link.onClick ? (
-                                    <button onClick={link.onClick} className="text-left">
-                                        {link.name}
-                                    </button>
-                                ) : link.to ? (
-                                    <NavLink to={link.to}>{link.name}</NavLink>
-                                ) : (
-                                    <span>{link.name}</span>
-                                )}
-                            </li>
-                        ))}
 
-                        {/* auth link */}
-                        {!isAuth ? (
-                            <li className="flex items-center gap-1 hover:text-black cursor-pointer">
-                                <FiLogIn />
-                                <NavLink to="/login">Login</NavLink>
-                            </li>
-                        ) : (
-                            <li className="flex items-center gap-1 hover:text-black cursor-pointer">
-                                <FiLogOut />
-                                <button onClick={handleLogout} className="text-left">Logout</button>
-                            </li>
-                        )}
-                    </nav>
+                    {/* Mobile Location Selector */}
+                    <div className="sm:hidden pb-3">
+                        <LocationSelector 
+                            onLocationClick={openLocationSidebar} 
+                            isDesktop={false} 
+                        />
+                    </div>
                 </div>
             </header>
         </>

@@ -1,11 +1,8 @@
 import { FaArrowRight, FaArrowLeft } from "react-icons/fa";
 import React from "react";
 import { Link } from "react-router-dom";
-
-function getImageUrl(imagePath) {
-    return "https://localhost:7172/api/Images/File/" + imagePath;
-}
-
+import getImageUrl from "../GenericFunctions/getImageUrl.jsx";
+ 
 export default function Category() {
     const [slide , setSlide] = React.useState(0);
     const [categories, setCategories] = React.useState([]);
@@ -40,32 +37,60 @@ export default function Category() {
 
 
     return (
-        <div className="max-w-[1200px] mx-auto">
-            <div className="flex my-5 item-left justify-between">
-               <div className="text-[25px] font-bold">What's on your Mind??</div>
-                <div className="flex">
-                    <div className="cursor-pointer flex justify-center items-center w-[30px] h-[30px] bg-gray rounded-full mx-2 "
-                    onClick={prevSlide}>
-                        <FaArrowLeft/>
-                    </div>
-                    <div className="cursor-pointer flex justify-center items-center w-[30px] h-[30px] bg-gray rounded-full mx-2"
-                    onClick={nextSlide}>
-                        <FaArrowRight/>
-                    </div>
+        <div className="w-full py-8">
+            <div className="flex items-center justify-between mb-6">
+               <h2 className="text-2xl font-bold text-gray-900">What's on your Mind?</h2>
+                <div className="flex space-x-2">
+                    <button 
+                        className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 ${
+                            slide > 0 
+                                ? 'bg-gray-200 hover:bg-gray-300 text-gray-700 cursor-pointer' 
+                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        }`}
+                        onClick={prevSlide}
+                        disabled={slide === 0}
+                    >
+                        <FaArrowLeft className="text-sm" />
+                    </button>
+                    <button 
+                        className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 ${
+                            slide < categories.length - 8
+                                ? 'bg-gray-200 hover:bg-gray-300 text-gray-700 cursor-pointer'
+                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        }`}
+                        onClick={nextSlide}
+                        disabled={slide >= categories.length - 8}
+                    >
+                        <FaArrowRight className="text-sm" />
+                    </button>
                 </div>
             </div>
-            <div className="flex border-red-600 overflow-hidden">
-                {categories.map((category, index) => {
-                    return(
-
-                    <div style={ {transform:`translateX(-${slide*100}%)`}}
-                    key={index} className="w-[150px] shrink-0 duration-500">
-                        <Link to=""><img src={getImageUrl(category.imageUrl)} alt=""/></Link>
-                    </div>
-                )})}
-            </div>
-            <hr className="my-6 border-[1px]"/>
             
+            <div className="flex overflow-hidden">
+                {categories.map((category, index) => (
+                    <div 
+                        style={{transform: `translateX(-${slide * 100}%)`}}
+                        key={index} 
+                        className="w-32 flex-shrink-0 transition-transform duration-500 ease-in-out"
+                    >
+                        <Link 
+                            to="" 
+                            className="block group"
+                        >
+                            <div className="relative overflow-hidden rounded-lg">
+                                <img 
+                                    src={getImageUrl(category.imageUrl)} 
+                                    alt={category.name || 'Category'}
+                                    className="w-full h-32 object-cover group-hover:scale-110 transition-transform duration-300"
+                                />
+                            </div>
+                          
+                        </Link>
+                    </div>
+                ))}
+            </div>
+            
+            <hr className="mt-8 mb-6 border-gray-200" />
         </div>
     );
 }
