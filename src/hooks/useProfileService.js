@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import apiClient from '../services/apiClient';
 
 export const useProfileService = (showSuccess, showError) => {
     const [loading, setLoading] = useState(false);
@@ -7,20 +8,8 @@ export const useProfileService = (showSuccess, showError) => {
     const fetchProfile = useCallback(async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('Please login to view profile');
-            }
-
-            const response = await fetch('https://localhost:7172/api/UserProfile', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch profile');
-            }
-
-            const data = await response.json();
+            const response = await apiClient.get('/UserProfile');
+            const data = response.data;
             return {
                 ...data,
                 dateOfBirth: data.dateOfBirth ? data.dateOfBirth.split('T')[0] : ''
@@ -36,50 +25,29 @@ export const useProfileService = (showSuccess, showError) => {
     const updateProfile = useCallback(async (profileData, imageFile) => {
         setSaving(true);
         try {
-            const token = localStorage.getItem('token');
-            
             // First, update the profile data (without image)
-            const response = await fetch('https://localhost:7172/api/UserProfile', {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    firstName: profileData.firstName,
-                    lastName: profileData.lastName,
-                    primaryMobileNumber: profileData.primaryMobileNumber,
-                    secondaryMobileNumber: profileData.secondaryMobileNumber,
-                    dateOfBirth: profileData.dateOfBirth ? new Date(profileData.dateOfBirth).toISOString() : null,
-                    gender: profileData.gender,
-                    preferredLanguage: profileData.preferredLanguage || 'English',
-                    emailNotifications: profileData.emailNotifications,
-                    smsNotifications: profileData.smsNotifications
-                })
+            await apiClient.put('/UserProfile', {
+                firstName: profileData.firstName,
+                lastName: profileData.lastName,
+                primaryMobileNumber: profileData.primaryMobileNumber,
+                secondaryMobileNumber: profileData.secondaryMobileNumber,
+                dateOfBirth: profileData.dateOfBirth ? new Date(profileData.dateOfBirth).toISOString() : null,
+                gender: profileData.gender,
+                preferredLanguage: profileData.preferredLanguage || 'English',
+                emailNotifications: profileData.emailNotifications,
+                smsNotifications: profileData.smsNotifications
             });
-
-            if (!response.ok) {
-                const errorData = await response.text();
-                throw new Error(errorData || 'Failed to update profile');
-            }
 
             // If there's an image file, upload it separately
             if (imageFile) {
                 const formData = new FormData();
                 formData.append('file', imageFile);
 
-                const imageResponse = await fetch('https://localhost:7172/api/UserProfile/upload-image', {
-                    method: 'POST',
+                await apiClient.post('/UserProfile/upload-image', formData, {
                     headers: {
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: formData
+                        'Content-Type': 'multipart/form-data'
+                    }
                 });
-
-                if (!imageResponse.ok) {
-                    const errorData = await imageResponse.text();
-                    throw new Error(errorData || 'Failed to upload profile image');
-                }
             }
 
             showSuccess('Profile updated successfully');

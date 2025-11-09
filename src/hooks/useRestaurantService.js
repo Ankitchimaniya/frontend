@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import apiClient from '../services/apiClient';
 
 const useRestaurantService = (showSuccess, showError) => {
     const [categories, setCategories] = useState([]);
@@ -8,26 +8,8 @@ const useRestaurantService = (showSuccess, showError) => {
 
     const fetchCategories = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-            const response = await axios.get('https://localhost:7172/api/Catagory/GetCatagories', { headers });
-
-            if (response.status === 200) {
-                setCategories(response.data);
-            } else {
-                // Fallback categories in case API fails
-                setCategories([
-                    { id: 1, name: 'Italian' },
-                    { id: 2, name: 'Chinese' },
-                    { id: 3, name: 'Indian' },
-                    { id: 4, name: 'Mexican' },
-                    { id: 5, name: 'American' },
-                    { id: 6, name: 'Thai' },
-                    { id: 7, name: 'Japanese' },
-                    { id: 8, name: 'Fast Food' },
-                    { id: 9, name: 'Other' }
-                ]);
-            }
+            const response = await apiClient.get('/Catagory/GetCatagories');
+            setCategories(response.data);
         } catch (error) { 
             // Fallback categories in case of network error
             setCategories([
@@ -68,16 +50,11 @@ const useRestaurantService = (showSuccess, showError) => {
             const imageFormData = new FormData();
             imageFormData.append("file", imageFile);
 
-            const imageRes = await axios.post("https://localhost:7172/api/Images/Upload", imageFormData, {
+            const imageRes = await apiClient.post("/Images/Upload", imageFormData, {
                 headers: { 
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
-                },
+                    'Content-Type': 'multipart/form-data'
+                }
             });
-
-            if (imageRes.status !== 200) {
-                const errorText = imageRes.data.message || "Failed to upload image";
-                throw new Error(errorText);
-            }
 
             const imageData = imageRes.data;
             setUploadProgress("✅ Image uploaded successfully!");
@@ -103,11 +80,9 @@ const useRestaurantService = (showSuccess, showError) => {
             }
             
             // Step 2: Add or Update restaurant with image URL
-            const apiUrl = editMode 
-                ? `https://localhost:7172/api/RestaurantDetails/${restaurantId}`
-                : "https://localhost:7172/api/RestaurantDetails";
-            
-            const method = editMode ? "PUT" : "POST"; 
+            const endpoint = editMode 
+                ? `/RestaurantDetails/${restaurantId}`
+                : "/RestaurantDetails";
             
             const requestBody = {
                 id: editMode ? restaurantId : 0,
@@ -121,31 +96,14 @@ const useRestaurantService = (showSuccess, showError) => {
                 location: form.location
             };
 
-            const res = await axios(apiUrl, {
-                method: method,
-                headers: { 
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
-                },
-                data: JSON.stringify(requestBody),
-            });
+            const res = editMode 
+                ? await apiClient.put(endpoint, requestBody)
+                : await apiClient.post(endpoint, requestBody);
 
-            if (res.status !== 200) {
-                const text = res.data;
-                let serverErrors = {};
-                try {
-                    const json = JSON.parse(text);
-                    serverErrors = json.errors || { server: json.message || text };
-                } catch {
-                    serverErrors = { server: text || "Server error" };
-                }
-                throw new Error(serverErrors.server || 'Failed to submit restaurant');
-            } else {
-                const data = await res.json().catch(() => null);
-                setUploadProgress("");
-                showSuccess(editMode ? "🎉 Restaurant updated successfully!" : "🎉 Restaurant added successfully!");
-                return data;
-            }
+            const data = res.data;
+            setUploadProgress("");
+            showSuccess(editMode ? "🎉 Restaurant updated successfully!" : "🎉 Restaurant added successfully!");
+            return data;
         } catch (err) {
             setUploadProgress("");
             showError(err.message || (editMode ? "❌ Failed to update restaurant." : "❌ Failed to add restaurant."));

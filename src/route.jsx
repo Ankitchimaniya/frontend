@@ -10,6 +10,7 @@ import ProfileManagement from "./Components/ProfileManagement.jsx";
 import OrderHistory from "./Components/OrderHistory.jsx";
 import OrderDetails from "./Components/OrderDetails.jsx";
 import Checkout from "./Components/Checkout.jsx";
+import Help from "./Components/Help.jsx";
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -61,6 +62,10 @@ const router = createBrowserRouter([
     {
         path: "checkout/:restaurantId",
         element: <ProtectedRoute><Checkout /></ProtectedRoute>
+    },
+    {
+        path: "help",
+        element: <Help />
     }
 ]);
 

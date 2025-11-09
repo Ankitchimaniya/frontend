@@ -2,18 +2,15 @@ import { FaArrowRight, FaArrowLeft } from "react-icons/fa";
 import React from "react";
 import { Link } from "react-router-dom";
 import getImageUrl from "../GenericFunctions/getImageUrl.jsx";
+import apiClient from "../services/apiClient.js";
  
 export default function Category() {
     const [slide , setSlide] = React.useState(0);
     const [categories, setCategories] = React.useState([]);
-   
-       const fetchCategories = async () => {
-           const token = localStorage.getItem('token');
-           const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-           const response = await fetch('https://localhost:7172/api/Catagory/GetCatagories', { headers });
-           const data = await response.json();
-           setCategories(data);
-       }; 
+   const fetchCategories = async () => {
+       const response = await apiClient.get('/Catagory/GetCatagories');
+       setCategories(response.data);
+   };
 
        React.useEffect(() => {
            fetchCategories();

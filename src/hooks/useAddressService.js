@@ -1,4 +1,4 @@
-import axios from 'axios';
+import apiClient from '../services/apiClient';
 import { useState, useCallback } from 'react';
 
 export const useAddressService = (showSuccess, showError) => {
@@ -7,22 +7,11 @@ export const useAddressService = (showSuccess, showError) => {
     const fetchAddresses = useCallback(async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('Please login to view addresses');
-            }
-
-            const response = await axios.get('https://localhost:7172/api/UserAddress', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.status !== 200) {
-                throw new Error('Failed to fetch addresses');
-            }
-
+            const response = await apiClient.get('/UserAddress');
             return response.data;
         } catch (err) {
-            showError(err.message);
+            const errorMessage = err.response?.data?.message || 'Failed to fetch addresses';
+            showError(errorMessage);
             throw err;
         } finally {
             setLoading(false);
@@ -31,70 +20,42 @@ export const useAddressService = (showSuccess, showError) => {
 
     const saveAddress = useCallback(async (formData, editingAddress) => {
         try {
-            const token = localStorage.getItem('token');
-            const url = editingAddress 
-                ? `https://localhost:7172/api/UserAddress/${editingAddress.id}`
-                : 'https://localhost:7172/api/UserAddress';
-            
-            const method = editingAddress ? 'PUT' : 'POST';
-
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(formData)
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to save address');
+            let response;
+            if (editingAddress) {
+                response = await apiClient.put(`/UserAddress/${editingAddress.id}`, formData);
+            } else {
+                response = await apiClient.post('/UserAddress', formData);
             }
 
             showSuccess(editingAddress ? 'Address updated successfully' : 'Address added successfully');
             return true;
         } catch (err) {
-            showError(err.message);
+            const errorMessage = err.response?.data?.message || 'Failed to save address';
+            showError(errorMessage);
             throw err;
         }
     }, [showSuccess, showError]);
 
     const deleteAddress = useCallback(async (addressId) => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`https://localhost:7172/api/UserAddress/${addressId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to delete address');
-            }
-
+            await apiClient.delete(`/UserAddress/${addressId}`);
             showSuccess('Address deleted successfully');
             return true;
         } catch (err) {
-            showError(err.message);
+            const errorMessage = err.response?.data?.message || 'Failed to delete address';
+            showError(errorMessage);
             throw err;
         }
     }, [showSuccess, showError]);
 
     const setDefaultAddress = useCallback(async (addressId) => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`https://localhost:7172/api/UserAddress/${addressId}/set-default`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to set default address');
-            }
-
+            await apiClient.put(`/UserAddress/${addressId}/set-default`);
             showSuccess('Default address updated successfully');
             return true;
         } catch (err) {
-            showError(err.message);
+            const errorMessage = err.response?.data?.message || 'Failed to set default address';
+            showError(errorMessage);
             throw err;
         }
     }, [showSuccess, showError]);

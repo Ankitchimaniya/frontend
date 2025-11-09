@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import useAlert from '../hooks/useAlert';
 import AlertContainer from './AlertContainer';
 import orderService from '../services/orderService';
+import apiClient from '../services/apiClient';
+import { authUtils } from '../services/authService';
 
 // Component imports
 import PageHeader from './Common/PageHeader';
@@ -41,8 +43,7 @@ const Checkout = () => {
 
     const loadCheckoutData = async () => {
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
+            if (!authUtils.isAuthenticated()) {
                 navigate('/login');
                 return;
             }
@@ -57,37 +58,22 @@ const Checkout = () => {
             setCartItems(cart);
 
             // Load restaurant info
-            const restaurantResponse = await fetch(`https://localhost:7172/api/RestaurantDetails/${restaurantId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (restaurantResponse.ok) {
-                const restaurantData = await restaurantResponse.json();
-                setRestaurantInfo(restaurantData);
-            }
+            const restaurantResponse = await apiClient.get(`/RestaurantDetails/${restaurantId}`);
+            setRestaurantInfo(restaurantResponse.data);
 
             // Load user addresses
-            const addressResponse = await fetch('https://localhost:7172/api/UserAddress', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (addressResponse.ok) {
-                const addressData = await addressResponse.json();
-                setAddresses(addressData);
-                const defaultAddress = addressData.find(addr => addr.isDefault);
-                if (defaultAddress) {
-                    setSelectedAddress(defaultAddress);
-                    setContactNumber(defaultAddress.contactNumber || '');
-                }
+            const addressResponse = await apiClient.get('/UserAddress');
+            setAddresses(addressResponse.data);
+            const defaultAddress = addressResponse.data.find(addr => addr.isDefault);
+            if (defaultAddress) {
+                setSelectedAddress(defaultAddress);
+                setContactNumber(defaultAddress.contactNumber || '');
             }
 
             // Load user profile for contact number
-            const profileResponse = await fetch('https://localhost:7172/api/UserProfile', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (profileResponse.ok) {
-                const profileData = await profileResponse.json();
-                if (!contactNumber && profileData.primaryMobileNumber) {
-                    setContactNumber(profileData.primaryMobileNumber);
-                }
+            const profileResponse = await apiClient.get('/UserProfile');
+            if (!contactNumber && profileResponse.data.primaryMobileNumber) {
+                setContactNumber(profileResponse.data.primaryMobileNumber);
             }
 
             // Calculate order summary

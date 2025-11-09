@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import apiClient from '../services/apiClient';
+import { authUtils } from '../services/authService';
 
 const useHeaderService = (showWarning) => {
     const [isAuth, setIsAuth] = useState(false);
@@ -10,10 +11,8 @@ const useHeaderService = (showWarning) => {
     const [cartItemCount, setCartItemCount] = useState(0);
     const [allCartItems, setAllCartItems] = useState([]);
 
-    const fetchLocation = async () => {
-        const token = localStorage.getItem('token');
-        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-        const response = await axios.get('https://localhost:7172/api/locations', { headers });
+    const fetchLocation = async () => { 
+        const response = await apiClient.get('/locations');
         setLocation(response.data);
     };
 
@@ -48,9 +47,7 @@ const useHeaderService = (showWarning) => {
         const uniqueRestaurantIds = [...new Set(allItems.map(item => item.restaurantId))];
         const restaurantPromises = uniqueRestaurantIds.map(async (restaurantId) => {
             try {
-                const token = localStorage.getItem('token');
-                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-                const response = await fetch(`https://localhost:7172/api/RestaurantDetails/${restaurantId}`, { headers });
+                const response = await apiClient.get(`/RestaurantDetails/${restaurantId}`);
                 if (response.ok) {
                     const data = await response.json();
                     return { id: restaurantId, name: data.title };
@@ -160,29 +157,8 @@ const useHeaderService = (showWarning) => {
         setProfileLoading(true);
         setProfileError("");
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('Please log in to view your profile');
-            }
-            
-            const res = await fetch('https://localhost:7172/api/UserProfile', {
-                headers: { 
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (res.status === 401) {
-                // Token expired or invalid
-                localStorage.removeItem('token');
-                setIsAuth(false);
-                throw new Error('Session expired. Please log in again');
-            }
-            
-            if (!res.ok) {
-                throw new Error(`Failed to fetch profile: ${res.status} ${res.statusText}`);
-            }
-            
-            const data = await res.json();
+            const res = await apiClient.get('/UserProfile');
+            const data = res.data;
             setUser(data);
         } catch (err) {
             setUser(null);
@@ -233,8 +209,7 @@ const useHeaderService = (showWarning) => {
 
     // Check auth status
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        setIsAuth(!!token);
+        setIsAuth(authUtils.isAuthenticated());
     }, []);
 
     return {

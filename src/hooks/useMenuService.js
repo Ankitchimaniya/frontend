@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import apiClient from '../services/apiClient';
 
 const useMenuService = (restaurantId, showSuccess, showError) => {
     const [loading, setLoading] = useState(true);
@@ -8,39 +8,17 @@ const useMenuService = (restaurantId, showSuccess, showError) => {
 
     const fetchRestaurantDetails = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`https://localhost:7172/api/RestaurantDetails/${restaurantId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (response.status === 200) {
-                return response.data;
-            } else {
-                throw new Error('Failed to fetch restaurant details');
-            }
-        } catch (err) {
-            showError(err.message);
-            return null;
+            const response = await apiClient.get(`/RestaurantDetails/${restaurantId}`);
+            return response.data;
+        } catch (error) {
+            throw new Error('Failed to fetch restaurant details');
         }
     };
-
+    
     const fetchMenuItems = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`https://localhost:7172/api/MenuItem/restaurant/${restaurantId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.status === 200) {
-                return response.data;
-            } else {
-                throw new Error('Failed to fetch menu items');
-            }
+            const response = await apiClient.get(`/MenuItem/restaurant/${restaurantId}`);
+            return response.data;
         } catch (err) {
             showError('Failed to fetch menu items: ' + err.message);
             return [];
@@ -57,16 +35,11 @@ const useMenuService = (restaurantId, showSuccess, showError) => {
             const imageFormData = new FormData();
             imageFormData.append("file", imageFile);
 
-            const imageRes = await axios.post("https://localhost:7172/api/Images/Upload", imageFormData, {
+            const imageRes = await apiClient.post("/Images/Upload", imageFormData, {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                    'Content-Type': 'multipart/form-data'
                 }
             });
-
-            if (imageRes.status !== 200) {
-                const errorText = imageRes.data.message || "Failed to upload image";
-                throw new Error(errorText);
-            }
 
             const imageData = imageRes.data;
             setUploadProgress("✅ Image uploaded successfully!");
@@ -87,8 +60,6 @@ const useMenuService = (restaurantId, showSuccess, showError) => {
     const createMenuItem = async (formData, imageFile) => {
         setSubmitting(true);
         try {
-            const token = localStorage.getItem('token');
-            
             validateMenuItem(formData);
             
             // Upload image if a new file is selected
@@ -111,21 +82,10 @@ const useMenuService = (restaurantId, showSuccess, showError) => {
                 restaurantId: parseInt(restaurantId)
             };
 
-            const response = await axios.post(`https://localhost:7172/api/MenuItem`, menuItemData, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            }); 
-
-            if (response.status === 201) {
-                const newItem = response.data;
-                showSuccess('Menu item added successfully!');
-                return newItem;
-            } else {
-                const errorData = response.data;
-                throw new Error(errorData.message || 'Failed to add menu item');
-            }
+            const response = await apiClient.post(`/MenuItem`, menuItemData);
+            const newItem = response.data;
+            showSuccess('Menu item added successfully!');
+            return newItem;
         } catch (err) {
             showError('Error saving menu item: ' + err.message);
             throw err;
@@ -138,8 +98,6 @@ const useMenuService = (restaurantId, showSuccess, showError) => {
     const updateMenuItem = async (editingItem, formData, imageFile) => {
         setSubmitting(true);
         try {
-            const token = localStorage.getItem('token');
-            
             validateMenuItem(formData);
             
             // Upload image if a new file is selected
@@ -163,23 +121,10 @@ const useMenuService = (restaurantId, showSuccess, showError) => {
                 restaurantId: parseInt(restaurantId)
             };
 
-            const response = await fetch(`https://localhost:7172/api/MenuItem/${editingItem.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(updateData)
-            });
-
-            if (response.ok) {
-                const updatedItem = await response.json();
-                showSuccess('Menu item updated successfully!');
-                return updatedItem;
-            } else {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to update menu item');
-            }
+            const response = await apiClient.put(`/MenuItem/${editingItem.id}`, updateData);
+            const updatedItem = response.data;
+            showSuccess('Menu item updated successfully!');
+            return updatedItem;
         } catch (err) {
             showError('Error saving menu item: ' + err.message);
             throw err;
@@ -192,22 +137,9 @@ const useMenuService = (restaurantId, showSuccess, showError) => {
     const deleteMenuItem = async (itemId) => {
         if (window.confirm('Are you sure you want to delete this menu item?')) {
             try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`https://localhost:7172/api/MenuItem/${itemId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    showSuccess('Menu item deleted successfully!');
-                    return true;
-                } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Failed to delete menu item');
-                }
+                await apiClient.delete(`/MenuItem/${itemId}`);
+                showSuccess('Menu item deleted successfully!');
+                return true;
             } catch (err) {
                 showError('Error deleting menu item: ' + err.message);
                 return false;
@@ -218,22 +150,8 @@ const useMenuService = (restaurantId, showSuccess, showError) => {
 
     const toggleItemAvailability = async (itemId, currentAvailability) => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`https://localhost:7172/api/MenuItem/${itemId}/availability`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(!currentAvailability)
-            });
-
-            if (response.ok) {
-                return !currentAvailability;
-            } else {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to update availability');
-            }
+            const response = await apiClient.patch(`/MenuItem/${itemId}/availability`, !currentAvailability);
+            return !currentAvailability;
         } catch (err) {
             showError('Error updating availability: ' + err.message);
             return currentAvailability;

@@ -1,92 +1,52 @@
-const API_BASE_URL = 'https://localhost:7172/api';
+import apiClient from "./apiClient";
 
 const orderService = {
     // Create a new order
     async createOrder(orderData) {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_BASE_URL}/Order`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(orderData)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to create order');
-        }
-
-        return await response.json();
+        const response = await apiClient.post('/Order', orderData);
+        return response.data;
     },
 
     // Get user orders with pagination
     async getUserOrders(page = 1, pageSize = 10) {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_BASE_URL}/Order?page=${page}&pageSize=${pageSize}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        const response = await apiClient.get('/Order', {
+            params: { page, pageSize }
         });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch orders');
-        }
-
-        return await response.json();
+        return response.data;
     },
 
     // Get specific order details
-    async getOrderById(orderId) {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_BASE_URL}/Order/${orderId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch order details');
-        }
-
-        return await response.json();
+    async getOrderById(orderId) { 
+        const response = await apiClient.get(`/Order/${orderId}`);
+        return response.data;
     },
 
     // Cancel an order
     async cancelOrder(orderId, reason) {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_BASE_URL}/Order/${orderId}/cancel`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ reason })
+        const response = await apiClient.put(`/Order/${orderId}/cancel`, {
+            reason
         });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to cancel order');
-        }
-
-        return await response.json();
+        return response.data;
     },
 
     // Get order statistics
     async getOrderStats() {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_BASE_URL}/Order/stats`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        const response = await apiClient.get('/Order/stats');
+        return response.data;
+    },
+
+    // Update order status (for admin/restaurant)
+    async updateOrderStatus(orderId, status) {
+        const response = await apiClient.put(`/Order/${orderId}/status`, {
+            status
         });
+        return response.data;
+    },
 
-        if (!response.ok) {
-            throw new Error('Failed to fetch order statistics');
-        }
-
-        return await response.json();
+    // Get order history for a user
+    async getOrderHistory(userId) {
+        const response = await apiClient.get(`/Order/history/${userId}`);
+        return response.data;
     }
 };
 

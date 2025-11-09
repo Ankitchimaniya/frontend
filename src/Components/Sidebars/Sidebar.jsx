@@ -113,8 +113,12 @@ Sidebar.propTypes = {
     cartItemCount: PropTypes.number,
     addToCart: PropTypes.func,
     removeFromCart: PropTypes.func,
-    removeItemCompletely: PropTypes.func
-   
+    removeItemCompletely: PropTypes.func,
+    // Mobile menu props
+    links: PropTypes.array,
+    isAuth: PropTypes.bool,
+    handleLogout: PropTypes.func,
+    openLocationSidebar: PropTypes.func
 };
 
 export default Sidebar;

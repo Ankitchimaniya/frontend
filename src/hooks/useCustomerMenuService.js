@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import apiClient from '../services/apiClient';
 
 const useCustomerMenuService = (showError) => {
     const { restaurantId } = useParams();
@@ -33,44 +34,21 @@ const useCustomerMenuService = (showError) => {
 
     const fetchRestaurantDetails = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`https://localhost:7172/api/RestaurantDetails/${restaurantId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                setRestaurant(data);
-            } else {
-                throw new Error('Failed to fetch restaurant details');
-            }
+            const response = await apiClient.get(`/RestaurantDetails/${restaurantId}`);
+            setRestaurant(response.data);
         } catch (err) {
-            showError(err.message);
+            showError(err.response?.data?.message || 'Failed to fetch restaurant details');
         }
     };
 
     const fetchMenuItems = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`https://localhost:7172/api/MenuItem/restaurant/${restaurantId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                // Filter only available items for customers
-                const availableItems = data.filter(item => item.isAvailable);
-                setMenuItems(availableItems);
-            } else {
-                throw new Error('Failed to fetch menu items');
-            }
+            const response = await apiClient.get(`/MenuItem/restaurant/${restaurantId}`);
+            // Filter only available items for customers
+            const availableItems = response.data.filter(item => item.isAvailable);
+            setMenuItems(availableItems);
         } catch (err) {
-            showError('Failed to fetch menu items: ' + err.message);
+            showError(err.response?.data?.message || 'Failed to fetch menu items');
         } finally {
             setLoading(false);
         }

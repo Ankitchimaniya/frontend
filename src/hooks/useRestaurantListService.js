@@ -1,4 +1,4 @@
-import axios from 'axios';
+import apiClient from '../services/apiClient';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -17,12 +17,7 @@ const useRestaurantListService = (showSuccess, showError) => {
     const fetchRestaurants = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-            const response = await axios.get('https://localhost:7172/api/RestaurantDetails', { headers });
-            if (response.status !== 200) {
-                throw new Error('Failed to fetch restaurants');
-            }
+            const response = await apiClient.get('/RestaurantDetails');
             setRestaurants(response.data);
         } catch (err) {
             showError(err.message);
@@ -118,21 +113,10 @@ const useRestaurantListService = (showSuccess, showError) => {
     const handleDelete = async (restaurantId) => {
         if (window.confirm('Are you sure you want to delete this restaurant?')) {
             try {
-                const token = localStorage.getItem('token');
-                const response = await axios.delete(`https://localhost:7172/api/RestaurantDetails/${restaurantId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }); 
-
-                if (response.status === 200) {
-                    // Remove restaurant from state
-                    setRestaurants(restaurants.filter(r => r.id !== restaurantId));
-                    showSuccess('Restaurant deleted successfully!');
-                } else {
-                    throw new Error('Failed to delete restaurant');
-                }
+                await apiClient.delete(`/RestaurantDetails/${restaurantId}`);
+                // Remove restaurant from state
+                setRestaurants(restaurants.filter(r => r.id !== restaurantId));
+                showSuccess('Restaurant deleted successfully!');
             } catch (err) {
                 showError('Error deleting restaurant: ' + err.message);
             }

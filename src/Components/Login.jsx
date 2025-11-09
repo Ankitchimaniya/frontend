@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash, FaFacebookF, FaTwitter, FaGoogle } from 'react-icons/fa';
-import axios from 'axios';
-import useAlert from '../hooks/useAlert';
+import useAuth from '../hooks/useAuth';
 import AlertContainer from './AlertContainer';
 
 export default function Login() {
-    const { alerts, showError, showSuccess, removeAlert } = useAlert();
+    const { login, loading, alerts, removeAlert } = useAuth();
     const [formData, setFormData] = useState({
         username: '',
         password: '',
     });
     const [showPassword, setShowPassword] = useState(false);
-    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -25,40 +23,18 @@ export default function Login() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
         
         try {
-            const response = await axios.post("https://localhost:7172/api/Authenticate/login",
-                JSON.stringify({
-                    username: formData.username, 
-                    password: formData.password
-                }),
-                { headers: { 'Content-Type': 'application/json' }
-                });
-            localStorage.setItem("token", response.data.token);
-            localStorage.setItem("username", formData.username);
-            localStorage.setItem("userId", response.data.userId);
-            showSuccess('Login successful! Welcome back!');
+            await login({
+                username: formData.username,
+                password: formData.password
+            });
+            
+            // Navigate to home page after successful login
             setTimeout(() => navigate('/'), 1500);
-        } catch (err) {
-            let errorMessage = "Login failed. Please try again.";
-            
-            if(!err.response) {
-                errorMessage = "No Server Response. Please check your connection.";
-            }
-            else if(err.response.status === 400) {
-                errorMessage = "Missing Username or Password";
-            }
-            else if(err.response.status === 401) {
-                errorMessage = "Invalid credentials. Please check your username and password.";
-            }
-            else {
-                errorMessage = "Login Failed. Please try again.";
-            }
-            
-            showError(errorMessage);
-        } finally {
-            setLoading(false);
+        } catch (error) {
+            // Error handling is done in the useAuth hook
+            console.error('Login error:', error);
         }
     };
 

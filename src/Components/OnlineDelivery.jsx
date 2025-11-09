@@ -1,15 +1,13 @@
 import React from 'react';
 import Card from './Card';
+import apiClient from '../services/apiClient';
 
 export default function OnlineDelivery() {
     const [data, setData] = React.useState([]); 
 
     const fetchData = async () => {
-        const token = localStorage.getItem('token');
-        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-        const response = await fetch('https://localhost:7172/api/RestaurantDetails', { headers });
-        const apiData = await response.json();
-        setData(apiData);
+        const response = await apiClient.get('/RestaurantDetails');
+        setData(response.data);
     }
     React.useEffect(() => {
         fetchData();

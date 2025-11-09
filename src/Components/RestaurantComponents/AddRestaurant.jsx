@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FaTimes, FaStore, FaEdit } from "react-icons/fa";
+import apiClient from "../../services/apiClient";
 
 // Import Restaurant components
 import BasicInformationFields from "../Restaurant/BasicInformationFields";
@@ -57,30 +58,12 @@ export default function AddRestaurant({
     // Fetch categories on component mount
     useEffect(() => {
         const fetchCategories = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-                const response = await fetch('https://localhost:7172/api/Catagory/GetCatagories', { headers });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    setCategories(data);
-                } else { 
-                    // Fallback categories in case API fails
-                    setCategories([
-                        { id: 1, name: 'Italian' },
-                        { id: 2, name: 'Chinese' },
-                        { id: 3, name: 'Indian' },
-                        { id: 4, name: 'Mexican' },
-                        { id: 5, name: 'American' },
-                        { id: 6, name: 'Thai' },
-                        { id: 7, name: 'Japanese' },
-                        { id: 8, name: 'Fast Food' },
-                        { id: 9, name: 'Other' }
-                    ]);
-                }
-            } catch (error) { 
-                // Fallback categories in case of network error
+            try { 
+                const response = await apiClient.get('/Catagory/GetCatagories');
+                setCategories(response.data);
+            } catch (error) {
+                console.error('Failed to fetch categories:', error);
+                // Fallback categories in case API fails
                 setCategories([
                     { id: 1, name: 'Italian' },
                     { id: 2, name: 'Chinese' },
@@ -196,28 +179,20 @@ export default function AddRestaurant({
         try {
             const imageFormData = new FormData();
             imageFormData.append("file", imageFile);
-            
-            const imageRes = await fetch("https://localhost:7172/api/Images/Upload", {
-                method: "POST",
-                headers: { 
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
-                },
-                body: imageFormData,
+
+            const imageRes = await apiClient.post("/Images/Upload", imageFormData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
             });
             
-            if (!imageRes.ok) {
-                const errorText = await imageRes.text();
-                throw new Error(errorText || "Failed to upload image");
-            }
-            
-            const imageData = await imageRes.json();
             setUploadProgress("✅ Image uploaded successfully!");
             
             // Return the image URL (adjust based on your API response structure)
-            return imageData.imageUrl || imageData.url || imageData.filePath || "";
+            return imageRes.data.imageUrl || imageRes.data.url || imageRes.data.filePath || "";
         } catch (error) {
             setUploadProgress("");
-            setErrors({ image: error.message || "Failed to upload image" });
+            setErrors({ image: error.response?.data?.message || "Failed to upload image" });
             throw error;
         }
     };
@@ -247,8 +222,8 @@ export default function AddRestaurant({
             
             // Step 2: Add or Update restaurant with image URL
             const apiUrl = editMode 
-                ? `https://localhost:7172/api/RestaurantDetails/${restaurantId}`
-                : "https://localhost:7172/api/RestaurantDetails";
+                ? `/RestaurantDetails/${restaurantId}`
+                : "/RestaurantDetails";
             
             const method = editMode ? "PUT" : "POST"; 
             
@@ -263,65 +238,36 @@ export default function AddRestaurant({
                 cuisine: form.cuisine,
                 location: form.location
             }; 
-            
-            const res = await fetch(apiUrl, {
-                method: method,
-                headers: { 
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({
-                    id: editMode ? restaurantId : 0,
-                    title: form.title,
-                    imageUrl: imageUrl,
-                    offer: form.offer,
-                    rating: form.rating ? Number(form.rating) : 0,
-                    minDeliveryTime: form.minDeliveryTime ? Number(form.minDeliveryTime) : 0,
-                    maxDeliveryTime: form.maxDeliveryTime ? Number(form.maxDeliveryTime) : 0,
-                    cuisine: form.cuisine,
-                    location: form.location
-                }),
-            });
 
-            if (!res.ok) {
-                const text = await res.text();
-                let serverErrors = {};
-                try {
-                    const json = JSON.parse(text);
-                    serverErrors = json.errors || { server: json.message || text };
-                } catch {
-                    serverErrors = { server: text || "Server error" };
-                }
-                setErrors(serverErrors);
-                setMessage(editMode ? "Failed to update restaurant." : "Failed to add restaurant.");
-            } else {
-                const data = await res.json().catch(() => null);
-                setUploadProgress("");
-                setMessage(editMode ? "🎉 Restaurant updated successfully!" : "🎉 Restaurant added successfully!");
-                
-                // Call onSuccess callback if provided
-                if (onSuccess && data) {
-                    onSuccess(data);
-                    
-                }
-                
-                if (!editMode) {
-                    // Reset form only in add mode
-                    setForm({
-                        title: "",
-                        offer: "",
-                        rating: "",
-                        minDeliveryTime: "",
-                        maxDeliveryTime: "",
-                        cuisine: "",
-                        location: "",
-                    });
-                    setSelectedCuisines([]);
-                    setImageFile(null);
-                    setExistingImageUrl("");
-                }
-                setErrors({}); 
+            const res = editMode 
+                ? await apiClient.put(`/RestaurantDetails/${restaurantId}`, requestBody)
+                : await apiClient.post("/RestaurantDetails", requestBody);
+
+            const data = res.data;
+            setUploadProgress("");
+            setMessage(editMode ? "🎉 Restaurant updated successfully!" : "🎉 Restaurant added successfully!");
+            
+            // Call onSuccess callback if provided
+            if (onSuccess && data) {
+                onSuccess(data);
             }
+            
+            if (!editMode) {
+                // Reset form only in add mode
+                setForm({
+                    title: "",
+                    offer: "",
+                    rating: "",
+                    minDeliveryTime: "",
+                    maxDeliveryTime: "",
+                    cuisine: "",
+                    location: "",
+                });
+                setSelectedCuisines([]);
+                setImageFile(null);
+                setExistingImageUrl("");
+            }
+            setErrors({});
         } catch (err) {
             setUploadProgress("");
             setErrors({ server: err.message || "Network error" });

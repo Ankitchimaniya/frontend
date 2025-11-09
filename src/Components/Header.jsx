@@ -8,7 +8,9 @@ import { IoIosAdd } from "react-icons/io";
 import { Sidebar } from "./Sidebars";
 import useAlert from "../hooks/useAlert";
 import useHeaderService from "../hooks/useHeaderService";
+import useSearchModal from "../hooks/useSearchModal";
 import AlertContainer from "./AlertContainer";
+import SearchModal from "./SearchModal";
 
 // Component imports
 import Logo from "./Header/Logo";
@@ -17,6 +19,7 @@ import Navigation from "./Header/Navigation";
 
 export default function Header() {
     const { alerts, showWarning, removeAlert } = useAlert();
+    const { isSearchOpen, openSearchModal, closeSearchModal } = useSearchModal();
     const {
         isAuth,
         locations,
@@ -67,9 +70,9 @@ export default function Header() {
     };
 
     const links = [
-        { icon: <GoSearch />, name: "Search" },
+        { icon: <GoSearch />, name: "Search", onClick: openSearchModal },
         { icon: <BiSolidOffer />, name: "Offers", sup: 'new' },
-        { icon: <IoMdHelp />, name: "Help" },
+        { icon: <IoMdHelp />, name: "Help", to: '/help' },
         { icon: <TiShoppingCart />, name: "Cart", sup: cartItemCount > 0 ? cartItemCount : null, onClick: openCartSidebar },
         { icon: <FaUser />, name: "Profile", onClick: openProfileSidebar },
         { icon: <IoIosAdd />, name: "Restaurant Mode", to: '/restaurant' },
@@ -79,6 +82,9 @@ export default function Header() {
         <>
             {/* Alert Container */}
             <AlertContainer alerts={alerts} removeAlert={removeAlert} />
+
+            {/* Search Modal */}
+            <SearchModal isOpen={isSearchOpen} onClose={closeSearchModal} />
 
             {/* Sidebar */}
             <Sidebar 

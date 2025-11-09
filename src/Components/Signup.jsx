@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash, FaCheck, FaTimes } from 'react-icons/fa';
 import useAlert from '../hooks/useAlert';
 import AlertContainer from './AlertContainer';
+import apiClient from "../services/apiClient";
 
 export default function Signup() {
     const { alerts, showError, showSuccess, removeAlert } = useAlert();
@@ -49,31 +50,36 @@ export default function Signup() {
         }
         
         try {
-            const response = await fetch("https://localhost:7172/api/authenticate/register", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    username: formData.email,
-                    email: formData.email,
-                    password: formData.password
-                })
+            const response = await apiClient.post("/authenticate/register", {
+                username: formData.email,
+                email: formData.email,
+                password: formData.password
             });
+
+            // Store authentication data
+            localStorage.setItem("token", response.data.token);
+            localStorage.setItem("username", formData.email);
+            localStorage.setItem("userId", response.data.userId);
             
-            if (!response.ok) {
-                const errorData = await response.text();
-                throw new Error(errorData || "Signup failed");
+            // Store refresh token if provided
+            if (response.data.refreshToken) {
+                localStorage.setItem("refreshToken", response.data.refreshToken);
             }
             
-            const data = await response.json();
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("username", formData.email);
-            localStorage.setItem("userId", data.userId);
             showSuccess('Account created successfully! Welcome aboard!');
             setTimeout(() => navigate('/'), 1500);
         } catch (err) {
-            showError(err.message || "Signup failed. Please try again.");
+            let errorMessage = "Signup failed. Please try again.";
+            
+            if (err.response?.status === 409) {
+                errorMessage = "Username or email already exists.";
+            } else if (err.response?.status === 400) {
+                errorMessage = "Please check your input and try again.";
+            } else if (!err.response) {
+                errorMessage = "No server response. Please check your connection.";
+            }
+            
+            showError(errorMessage);
         } finally {
             setLoading(false);
         }
