@@ -132,34 +132,6 @@ const handleLogout = () => {
     window.location.href = '/login';
 };
 
-// API methods for common operations
-export const apiMethods = {
-    // GET request
-    get: (url, config = {}) => {
-        return apiClient.get(url, config);
-    },
-
-    // POST request
-    post: (url, data, config = {}) => {
-        return apiClient.post(url, data, config);
-    },
-
-    // PUT request
-    put: (url, data, config = {}) => {
-        return apiClient.put(url, data, config);
-    },
-
-    // PATCH request
-    patch: (url, data, config = {}) => {
-        return apiClient.patch(url, data, config);
-    },
-
-    // DELETE request
-    delete: (url, config = {}) => {
-        return apiClient.delete(url, config);
-    }
-};
-
 // Export the configured axios instance
 export default apiClient;
 
