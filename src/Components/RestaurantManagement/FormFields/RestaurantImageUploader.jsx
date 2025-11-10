@@ -1,5 +1,5 @@
 import React from 'react';
-import getImageUrl from '../../GenericFunctions/getImageUrl';
+import getImageUrl from '../../../GenericFunctions/getImageUrl';
 
 const RestaurantImageUploader = ({ 
     editMode, 

@@ -1,5 +1,5 @@
 import React from 'react';
-import AddRestaurant from '../RestaurantComponents/AddRestaurant';
+import RestaurantForm from './RestaurantForm';
 
 const EditRestaurantModal = ({ 
     isOpen, 
@@ -18,7 +18,7 @@ const EditRestaurantModal = ({
                 className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-slide-up" 
                 onClick={(e) => e.stopPropagation()}
             >
-                <AddRestaurant
+                <RestaurantForm
                     editMode={true}
                     restaurantId={editingRestaurant.id}
                     initialData={editingRestaurant}

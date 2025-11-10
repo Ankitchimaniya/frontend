@@ -2,8 +2,8 @@ import Login from "./Components/Login";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import RootLayout from "./Components/root";
 import Signup from "./Components/Signup"; 
-import ListComponent from "./Components/RestaurantComponents/ListComponent.jsx";
-import MenuManagement from "./Components/RestaurantComponents/MenuManagement.jsx";
+import RestaurantList from "./Components/RestaurantManagement/RestaurantList.jsx";
+import MenuManagement from "./Components/RestaurantManagement/MenuManagement.jsx";
 import CustomerRestaurantMenu from "./Components/CustomerRestaurantMenu.jsx";
 import AddressManagement from "./Components/AddressManagement.jsx";
 import ProfileManagement from "./Components/ProfileManagement.jsx";
@@ -33,7 +33,7 @@ const router = createBrowserRouter([
     },
     {
         path: "restaurant",
-        element: <ListComponent />
+        element: <RestaurantList />
     },
     {
         path: "restaurant/:restaurantId/manage-menu",

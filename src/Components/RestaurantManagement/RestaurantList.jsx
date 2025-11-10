@@ -4,13 +4,13 @@ import useRestaurantListService from '../../hooks/useRestaurantListService';
 import AlertContainer from '../AlertContainer';
 
 // Component imports
-import LoadingState from '../RestaurantList/LoadingState';
-import RestaurantListHeader from '../RestaurantList/RestaurantListHeader';
-import RestaurantCard from '../RestaurantList/RestaurantCard';
-import AddRestaurant from './AddRestaurant';
-import EditRestaurantModal from '../RestaurantList/EditRestaurantModal';
+import LoadingState from './LoadingState';
+import RestaurantListHeader from './RestaurantListHeader';
+import RestaurantCard from './RestaurantCard';
+import RestaurantForm from './RestaurantForm';
+import EditRestaurantModal from './EditRestaurantModal';
 
-function ListComponent() {
+function RestaurantList() {
     const { alerts, showSuccess, showError, removeAlert } = useAlert();
     const {
         restaurants,
@@ -56,7 +56,7 @@ function ListComponent() {
             {showAddModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
-                        <AddRestaurant
+                        <RestaurantForm
                             editMode={false}
                             onSuccess={handleAddSuccess}
                             onCancel={handleAddCancel}
@@ -76,4 +76,4 @@ function ListComponent() {
     );
 };
 
-export default ListComponent;
+export default RestaurantList;

@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { FaTimes, FaStore, FaEdit } from "react-icons/fa";
 import apiClient from "../../services/apiClient";
 
-// Import Restaurant components
-import BasicInformationFields from "../Restaurant/BasicInformationFields";
-import CuisineSelector from "../Restaurant/CuisineSelector";
-import RestaurantDetailsFields from "../Restaurant/RestaurantDetailsFields";
-import RestaurantImageUploader from "../Restaurant/RestaurantImageUploader";
-import RestaurantFormHeader from "../Restaurant/RestaurantFormHeader";
-import RestaurantFormActions from "../Restaurant/RestaurantFormActions";
+// Import Restaurant form field components
+import BasicInformationFields from "./FormFields/BasicInformationFields";
+import CuisineSelector from "./FormFields/CuisineSelector";
+import RestaurantDetailsFields from "./FormFields/RestaurantDetailsFields";
+import RestaurantImageUploader from "./FormFields/RestaurantImageUploader";
+import RestaurantFormHeader from "./FormFields/RestaurantFormHeader";
+import RestaurantFormActions from "./FormFields/RestaurantFormActions";
 
 /**
- * AddRestaurant.jsx
+ * RestaurantForm.jsx
  *
  * Reusable Add/Edit Restaurant form component.
  *
@@ -24,11 +23,11 @@ import RestaurantFormActions from "../Restaurant/RestaurantFormActions";
  * - onCancel (function) - callback for cancel action
  *
  * Usage:
- * <AddRestaurant endpoint="/api/restaurants" onSuccess={r => console.log(r)} />
- * <AddRestaurant editMode={true} restaurantId={123} initialData={data} onSuccess={r => console.log(r)} />
+ * <RestaurantForm endpoint="/api/restaurants" onSuccess={r => console.log(r)} />
+ * <RestaurantForm editMode={true} restaurantId={123} initialData={data} onSuccess={r => console.log(r)} />
  */
 
-export default function AddRestaurant({ 
+export default function RestaurantForm({ 
     onSuccess, 
     editMode = false, 
     restaurantId = null, 
@@ -221,12 +220,6 @@ export default function AddRestaurant({
             }
             
             // Step 2: Add or Update restaurant with image URL
-            const apiUrl = editMode 
-                ? `/RestaurantDetails/${restaurantId}`
-                : "/RestaurantDetails";
-            
-            const method = editMode ? "PUT" : "POST"; 
-            
             const requestBody = {
                 id: editMode ? restaurantId : 0,
                 title: form.title,
