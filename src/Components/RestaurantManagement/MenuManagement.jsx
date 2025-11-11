@@ -4,6 +4,7 @@ import useAlert from '../../hooks/useAlert';
 import useMenuService from '../../hooks/useMenuService';
 import AlertContainer from '../AlertContainer';
 import LoadingSpinner from '../Common/LoadingSpinner';
+import apiClient from '../../services/apiClient';
 
 // Component imports
 import MenuHeader from '../Menu/MenuHeader';
@@ -28,6 +29,7 @@ export default function MenuManagement() {
 
     const [restaurant, setRestaurant] = useState(null);
     const [menuItems, setMenuItems] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [formData, setFormData] = useState({
@@ -59,6 +61,19 @@ export default function MenuManagement() {
         
         loadData();
     }, [restaurantId]);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await apiClient.get('/Catagory/GetCatagories');
+                setCategories(response.data);
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+            }
+        };
+        
+        fetchCategories();
+    }, []);
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -195,6 +210,7 @@ export default function MenuManagement() {
                 submitting={submitting}
                 uploadProgress={uploadProgress}
                 imageFile={imageFile}
+                categories={categories}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
                 onInputChange={handleInputChange}

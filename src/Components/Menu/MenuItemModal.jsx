@@ -9,6 +9,7 @@ const MenuItemModal = ({
     submitting, 
     uploadProgress, 
     imageFile,
+    categories = [],
     onSubmit, 
     onCancel, 
     onInputChange, 
@@ -75,15 +76,20 @@ const MenuItemModal = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">Category *</label>
-                            <input
-                                type="text"
+                            <select
                                 name="category"
                                 value={formData.category}
                                 onChange={onInputChange}
-                                placeholder="e.g., Pizza, Salads, Main Course"
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                                 required
-                            />
+                            >
+                                <option value="">Select a category</option>
+                                {categories.map((cat) => (
+                                    <option key={cat.id} value={cat.name}>
+                                        {cat.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         
                         <div>
